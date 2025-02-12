@@ -10,14 +10,18 @@ import TextAreaAutosize from "react-textarea-autosize"
 import expressions, { Lexer } from "angular-expressions"
 import { ASTPreview } from "./ASTPreview"
 import { ExpressionEditor } from "./ExpressionEditor"
+import lzstring, { decompressFromEncodedURIComponent } from "lz-string"
 
 // eslint-disable-next-line no-var
 var scopeResult = {}
 
 function App() {
   const [scopeString, setScopeString] = useState(() => {
+    const fromParams = new URLSearchParams(document.location.search).get("scope")
     const localData = localStorage.getItem("scopeData")
-    return localData || '{ user: { id: "123", name: "Jane Doe" }, data: { a:[ 1, 2, 3]} }'
+    return fromParams
+      ? decompressFromEncodedURIComponent(fromParams)
+      : localData || '{ user: { id: "123", name: "Jane Doe" }, data: { a:[ 1, 2, 3]} }'
   })
 
   const [scopeEvalError, setScopeEvalError] = useState<Error | null>(null)
@@ -33,13 +37,21 @@ function App() {
   }, [scopeString])
 
   const [expressionString, setExpressionString] = useState(() => {
+    const fromParams = new URLSearchParams(document.location.search).get("expression")
     const localData = localStorage.getItem("expressionString")
-    return localData || "user.id"
+    return fromParams ? decompressFromEncodedURIComponent(fromParams) : localData || "user.id"
   })
 
   useEffect(() => {
     localStorage.setItem("scopeData", scopeString)
     localStorage.setItem("expressionString", expressionString)
+
+    const options = new URLSearchParams(document.location.search)
+    options.set("scope", lzstring.compressToEncodedURIComponent(scopeString))
+    options.set("expression", lzstring.compressToEncodedURIComponent(expressionString))
+
+    const newUrl = `${document.location.origin}${document.location.pathname}?${options.toString()}`
+    window.history.replaceState({}, "", newUrl)
   }, [scopeString, expressionString])
 
   const [expressionEvalError, setExpressionEvalError] = useState<Error | null>(null)
