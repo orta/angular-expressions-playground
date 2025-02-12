@@ -21,7 +21,7 @@ export const ExpressionEditor = (props: {
   );
 
   const editorMounted = useCallback<EditorDidMount>(
-    (e, m) => {
+    (e, _m) => {
       // Handle width re-sizing
       if (wrapperElement.current) {
         const monacoWatcher = new ResizeObserver(() => e.layout());
