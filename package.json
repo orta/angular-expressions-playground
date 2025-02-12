@@ -10,6 +10,9 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "prettier": {
+    "printWidth": 140
+  },
   "dependencies": {
     "angular-expressions": "^1.4.3",
     "bootstrap": "^5.3.3",
