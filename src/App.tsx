@@ -1,68 +1,77 @@
-import { useMemo, useState } from "react";
-import "./App.scss";
+import { useEffect, useMemo, useState } from "react"
+import "./App.scss"
 
-import Container from "react-bootstrap/esm/Container";
-import Row from "react-bootstrap/esm/Row";
-import Col from "react-bootstrap/esm/Col";
-import Form from "react-bootstrap/esm/Form";
-import Card from "react-bootstrap/esm/Card";
-
-import expressions, { Lexer } from "angular-expressions";
-import { ASTPreview } from "./ASTPreview";
-import { ExpressionEditor } from "./ExpressionEditor";
+import Container from "react-bootstrap/esm/Container"
+import Row from "react-bootstrap/esm/Row"
+import Col from "react-bootstrap/esm/Col"
+import Form from "react-bootstrap/esm/Form"
+import Card from "react-bootstrap/esm/Card"
+import TextAreaAutosize from "react-textarea-autosize"
+import expressions, { Lexer } from "angular-expressions"
+import { ASTPreview } from "./ASTPreview"
+import { ExpressionEditor } from "./ExpressionEditor"
 
 // eslint-disable-next-line no-var
-var scopeResult = {};
+var scopeResult = {}
 
 function App() {
-  const [scopeString, setScopeString] = useState(
-    '{ id: "123", name: "Jane Doe" }'
-  );
-  const [scopeEvalError, setScopeEvalError] = useState<Error | null>(null);
+  const [scopeString, setScopeString] = useState(() => {
+    const localData = localStorage.getItem("scopeData")
+    return localData || '{ user: { id: "123", name: "Jane Doe" }, data: { a:[ 1, 2, 3]} }'
+  })
+
+  const [scopeEvalError, setScopeEvalError] = useState<Error | null>(null)
   const scopeEvaled = useMemo(() => {
     try {
-      setScopeEvalError(null);
-      return eval(`scopeResult = ${scopeString}; scopeResult`);
+      setScopeEvalError(null)
+      return eval(`scopeResult = ${scopeString}; scopeResult`)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
-      setScopeEvalError(e);
-      return null;
+      setScopeEvalError(e)
+      return null
     }
-  }, [scopeString]);
+  }, [scopeString])
 
-  const [expressionString, setExpressionString] = useState("id");
-  const [expressionEvalError, setExpressionEvalError] = useState<Error | null>(
-    null
-  );
+  const [expressionString, setExpressionString] = useState(() => {
+    const localData = localStorage.getItem("expressionString")
+    return localData || "user.id"
+  })
+
+  useEffect(() => {
+    localStorage.setItem("scopeData", scopeString)
+    localStorage.setItem("expressionString", expressionString)
+  }, [scopeString, expressionString])
+
+  const [expressionEvalError, setExpressionEvalError] = useState<Error | null>(null)
   const expressionInfo = useMemo(() => {
     try {
-      setExpressionEvalError(null);
-      const expression = expressions.compile(expressionString);
-      const seen: any[] = [];
+      setExpressionEvalError(null)
+      const expression = expressions.compile(expressionString)
+      const seen: any[] = []
       const astString = JSON.stringify(expression.ast, function (key, val) {
         if (val != null && typeof val == "object") {
-          if (seen.indexOf(val) >= 0) return;
-          seen.push(val);
+          if (seen.indexOf(val) >= 0) return
+          seen.push(val)
         }
-        return val;
-      });
+        return val
+      })
 
-      const lexer = new Lexer();
+      const lexer = new Lexer()
       // @ts-expect-error - Lexer does not have a type
-      const tokens = lexer.lex(expressionString);
+      const tokens = lexer.lex(expressionString)
 
       return {
         compiled: expression,
         result: expression(scopeResult),
         astString,
         tokens,
-      };
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
-      setExpressionEvalError(e);
-      return null;
+      setExpressionEvalError(e)
+      return null
     }
-  }, [expressionString]);
+  }, [expressionString])
 
   return (
     <Container fluid>
@@ -71,30 +80,18 @@ function App() {
           <Form>
             <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
               <Form.Label>Expression</Form.Label>
-              <ExpressionEditor
-                expressionString={expressionString}
-                setExpressionString={setExpressionString}
-              />
+              <ExpressionEditor expressionString={expressionString} setExpressionString={setExpressionString} />
             </Form.Group>
-            <Form.Group
-              className="mb-3"
-              controlId="exampleForm.ControlTextarea1"
-            >
+            <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea1">
               <Form.Label>Scope</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                className="font-monospace"
-                value={scopeString}
+              <TextAreaAutosize
+                defaultValue={scopeString}
+                className="form-control font-monospace"
+                rows={10}
                 onChange={(e) => setScopeString(e.target.value)}
               />
-              <Form.Text className="text-muted">
-                {scopeEvaled ? (
-                  <pre>{JSON.stringify(scopeEvaled, null, 2)}</pre>
-                ) : scopeEvalError ? (
-                  <pre>{scopeEvalError.message}</pre>
-                ) : null}
-              </Form.Text>
+
+              <Form.Text className="text-muted">{scopeEvalError ? <pre>{scopeEvalError.message}</pre> : null}</Form.Text>
             </Form.Group>
           </Form>
         </Col>
@@ -124,7 +121,7 @@ function App() {
               <Card.Body>
                 <Card.Title>Syntax Tokens</Card.Title>
                 <Card.Text>
-                  <pre>
+                  <pre style={{ whiteSpace: "pre-wrap", lineHeight: 2.2 }}>
                     {expressionInfo.tokens.map((t) => (
                       <span
                         style={{
@@ -151,23 +148,23 @@ function App() {
         </Col>
       </Row>
     </Container>
-  );
+  )
 }
 
 const RenderLiteral = ({ value }: { value: any }) => {
   if (typeof value === "string") {
-    return <span className="text-primary">"{value}"</span>;
+    return <span className="text-primary">"{value}"</span>
   } else if (typeof value === "number") {
-    return <span className="text-success">{value}</span>;
+    return <span className="text-success">{value}</span>
   } else if (typeof value === "boolean") {
-    return <span className="text-warning">{value ? "true" : "false"}</span>;
+    return <span className="text-warning">{value ? "true" : "false"}</span>
   } else if (value === null) {
-    return <span className="text-muted">null</span>;
+    return <span className="text-muted">null</span>
   } else if (value === undefined) {
-    return <span className="text-muted">undefined</span>;
+    return <span className="text-muted">undefined</span>
   } else {
-    return <span className="text-danger">{JSON.stringify(value)}</span>;
+    return <span className="text-danger">{JSON.stringify(value)}</span>
   }
-};
+}
 
-export default App;
+export default App
