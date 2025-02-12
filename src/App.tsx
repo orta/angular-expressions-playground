@@ -5,12 +5,11 @@ import Container from "react-bootstrap/esm/Container";
 import Row from "react-bootstrap/esm/Row";
 import Col from "react-bootstrap/esm/Col";
 import Form from "react-bootstrap/esm/Form";
-import Tabs from "react-bootstrap/esm/Tabs";
-import Tab from "react-bootstrap/esm/Tab";
 import Card from "react-bootstrap/esm/Card";
 
-import expressions, { Lexer, Parser } from "angular-expressions";
+import expressions, { Lexer } from "angular-expressions";
 import { ASTPreview } from "./ASTPreview";
+import { ExpressionEditor } from "./ExpressionEditor";
 
 // eslint-disable-next-line no-var
 var scopeResult = {};
@@ -49,11 +48,14 @@ function App() {
       });
 
       const lexer = new Lexer();
+      // @ts-expect-error - Lexer does not have a type
+      const tokens = lexer.lex(expressionString);
 
       return {
         compiled: expression,
         result: expression(scopeResult),
         astString,
+        tokens,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
@@ -69,11 +71,9 @@ function App() {
           <Form>
             <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
               <Form.Label>Expression</Form.Label>
-              <Form.Control
-                placeholder="Expression string"
-                className="font-monospace"
-                value={expressionString}
-                onChange={(e) => setExpressionString(e.target.value)}
+              <ExpressionEditor
+                expressionString={expressionString}
+                setExpressionString={setExpressionString}
               />
             </Form.Group>
             <Form.Group
@@ -99,34 +99,55 @@ function App() {
           </Form>
         </Col>
         <Col>
+          <Card style={{ margin: "1em" }}>
+            <Card.Body>
+              <Card.Title>Result</Card.Title>
+              <Card.Text>
+                <RenderLiteral value={expressionInfo?.result} />
+              </Card.Text>
+            </Card.Body>
+          </Card>
 
-              <Card style={{ margin: "1em"}}>
-                <Card.Body>
-                  <Card.Title>Result</Card.Title>
-                  <Card.Text>
-                    <RenderLiteral value={expressionInfo?.result} />
-                  </Card.Text>
-                </Card.Body>
-              </Card>
+          {expressionInfo && (
+            <Card style={{ margin: "1em" }}>
+              <Card.Body>
+                <Card.Title>AST</Card.Title>
+                <Card.Text>
+                  <ASTPreview ast={expressionInfo.compiled.ast} />
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          )}
 
-              {expressionInfo && (
-                <Card style={{ margin: "1em"}}>
-                  <Card.Body>
-                    <Card.Title>AST</Card.Title>
-                    <Card.Text>
-                      <ASTPreview ast={expressionInfo.compiled.ast} />
-                    </Card.Text>
-                  </Card.Body>
-                </Card>
-              )}
+          {expressionInfo && (
+            <Card style={{ margin: "1em" }}>
+              <Card.Body>
+                <Card.Title>Syntax Tokens</Card.Title>
+                <Card.Text>
+                  <pre>
+                    {expressionInfo.tokens.map((t) => (
+                      <span
+                        style={{
+                          backgroundColor: "#aabbFF50",
+                          padding: 4,
+                          margin: 4,
+                          borderRadius: 4,
+                        }}
+                      >
+                        {JSON.stringify(t)}
+                      </span>
+                    ))}
+                  </pre>
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          )}
 
-              {expressionEvalError && (
-                <Form.Text className="text-muted">
-                  <pre>{expressionEvalError.message}</pre>
-                </Form.Text>
-              )}
-
-
+          {expressionEvalError && (
+            <Form.Text className="text-muted">
+              <pre>{expressionEvalError.message}</pre>
+            </Form.Text>
+          )}
         </Col>
       </Row>
     </Container>
