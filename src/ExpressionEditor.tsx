@@ -1,39 +1,33 @@
-import { useCallback, useRef, useState } from "react";
-import MonacoEditor, {
-  EditorDidMount,
-  EditorWillMount,
-  monaco,
-} from "react-monaco-editor";
+import { useCallback, useRef, useState } from "react"
+import MonacoEditor, { EditorDidMount, EditorWillMount, monaco } from "react-monaco-editor"
 
-export const ExpressionEditor = (props: {
-  expressionString: string;
-  setExpressionString: (str: string) => void;
-}) => {
-  const [height, setHeight] = useState(34);
-  const wrapperElement = useRef<HTMLDivElement>(null);
+export const ExpressionEditor = (props: { expressionString: string; setExpressionString: (str: string) => void }) => {
+  const [height, setHeight] = useState(34)
+  const wrapperElement = useRef<HTMLDivElement>(null)
+  const setDefaultHeight = useRef(false)
 
   // When the inner content height changes, handle the resize
-  const updateHeight = useCallback(
-    (e: monaco.editor.IContentSizeChangedEvent) => {
-      if (e.contentHeightChanged) setHeight(e.contentHeight);
-    },
-    []
-  );
+  const updateHeight = useCallback((e: monaco.editor.IContentSizeChangedEvent) => {
+    if (e.contentHeightChanged || !setDefaultHeight.current) {
+      setHeight(e.contentHeight)
+      setDefaultHeight.current = true
+    }
+  }, [])
 
   const editorMounted = useCallback<EditorDidMount>(
     (e, _m) => {
       // Handle width re-sizing
       if (wrapperElement.current) {
-        const monacoWatcher = new ResizeObserver(() => e.layout());
-        monacoWatcher.observe(wrapperElement.current);
+        const monacoWatcher = new ResizeObserver(() => e.layout())
+        monacoWatcher.observe(wrapperElement.current)
       }
 
-      e.onDidContentSizeChange(updateHeight);
+      e.onDidContentSizeChange(updateHeight)
     },
     [updateHeight]
-  );
+  )
 
-  const editorWillMount = useCallback<EditorWillMount>((m) => {}, []);
+  const editorWillMount = useCallback<EditorWillMount>((m) => {}, [])
   return (
     <div ref={wrapperElement} className="form-control me-2">
       <MonacoEditor
@@ -68,5 +62,5 @@ export const ExpressionEditor = (props: {
         editorDidMount={editorMounted}
       />
     </div>
-  );
-};
+  )
+}

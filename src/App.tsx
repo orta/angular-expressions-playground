@@ -25,16 +25,16 @@ function App() {
   })
 
   const [scopeEvalError, setScopeEvalError] = useState<Error | null>(null)
-  const scopeEvaled = useMemo(() => {
-    try {
-      setScopeEvalError(null)
-      return eval(`scopeResult = ${scopeString}; scopeResult`)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (e: any) {
-      setScopeEvalError(e)
-      return null
-    }
-  }, [scopeString])
+  // const scopeEvaled = useMemo(() => {
+  //   try {
+  //     setScopeEvalError(null)
+  //     return eval(`scopeResult = ${scopeString}; scopeResult`)
+  //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  //   } catch (e: any) {
+  //     setScopeEvalError(e)
+  //     return null
+  //   }
+  // }, [scopeString])
 
   const [expressionString, setExpressionString] = useState(() => {
     const fromParams = new URLSearchParams(document.location.search).get("expression")
