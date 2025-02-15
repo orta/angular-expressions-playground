@@ -28,6 +28,7 @@ export const ExpressionEditor = (props: { expressionString: string; setExpressio
   )
 
   const editorWillMount = useCallback<EditorWillMount>((m) => {}, [])
+
   return (
     <div ref={wrapperElement} className="form-control me-2">
       <MonacoEditor
