@@ -1,10 +1,10 @@
 import { Lexer } from "angular-expressions"
+import traverse from "json-schema-traverse"
 
-export const expressionInspector = (expression: string, config?: { scope: object }) => {
+export const expressionInspector = (expression: string, config?: { scope?: object; schema?: any }) => {
   const scope: any = config?.scope || {}
 
   const lexer = new Lexer()
-  // console.log(lexer)
   if (!("lex" in lexer)) throw new Error("Angular Expressions' Lexer does not have an 'ast' method, which is needed for this tool.")
 
   // @ts-expect-error - we check above
@@ -12,6 +12,14 @@ export const expressionInspector = (expression: string, config?: { scope: object
 
   const isIdentifier = (token: any): token is IdentifierToken => "index" in token && "text" in token && "identifier" in token
   const isDot = (token: any): token is DotToken => "index" in token && "text" in token && token.text === "."
+
+  const pointerMap = new Map<string, traverse.SchemaObject>()
+  if (config?.schema)
+    traverse(config.schema, {
+      cb: function (schema, pointer) {
+        pointerMap.set(pointer, schema)
+      },
+    })
 
   return {
     /** 0-based  */
@@ -54,12 +62,32 @@ export const expressionInspector = (expression: string, config?: { scope: object
         return acc
       }, scope)
 
+      let schemaInfo: any = undefined
+      if (config?.schema) {
+        // We assume that "$ref" is the root of the schema
+        const rootSchemaObj = config.schema["$ref"] ? config.schema : config.schema["$ref"]
+        const rootPointer = `${rootSchemaObj["$ref"].slice(1)}`
+
+        const root = pointerMap.get(rootPointer)
+        if (objectPath.length === 1) schemaInfo = root
+        else {
+          // TODO:
+        }
+      }
+
+      const scopeCompletion = Object.keys(scopeObject)
+      const schemaCompletion = schemaInfo && schemaInfo.properties ? Object.keys(schemaInfo.properties) : []
+      const completions = [...scopeCompletion, ...schemaCompletion]
+
+      const lastToken = objectPath[objectPath.length - 1]
+
       return {
         char: expression[position],
         chain: objectPath,
         path: objectPath.map((token) => token.text).join(""),
         scopeObject,
-        completions: onDot ? Object.keys(scopeObject) : Object.keys(scopeObject).filter((key) => key.startsWith(expression[position])),
+        completions: onDot ? completions : completions.filter((key) => key.startsWith(lastToken.text)),
+        schemaInfo,
       }
     },
     info: {
@@ -70,4 +98,3 @@ export const expressionInspector = (expression: string, config?: { scope: object
 
 type IdentifierToken = { index: number; text: string; identifier: true }
 type DotToken = { index: number; text: "." }
-type OperatorToken = { index: number; text: string; operator: true }

@@ -1,5 +1,6 @@
 import { it, expect, describe } from "vitest"
 import { expressionInspector } from "./expressionDevTools"
+import { augmentationSchema } from "./augmentsSchema"
 
 it("should return the correct value", () => {
   const tool = expressionInspector("user.name + 1")
@@ -129,5 +130,27 @@ describe("infoAtPosition", () => {
     expect(info.char).toMatchInlineSnapshot(`"e"`)
     expect(info.path).toMatchInlineSnapshot(`"a.b.c.d.e"`)
     expect(info.scopeObject).toMatchInlineSnapshot(`20`)
+  })
+})
+
+describe("json schema", () => {
+  it("handles grabbing info from a json schema", () => {
+    const tool = expressionInspector("leaderboa", {
+      schema: augmentationSchema,
+    })
+
+    const info = tool.infoAtPosition(3)!
+    expect(info.char).toMatchInlineSnapshot(`"d"`)
+    expect(info.path).toMatchInlineSnapshot(`"leaderboa"`)
+    expect(info.schemaInfo.description).toMatchInlineSnapshot(`
+      "Site-wide hooks which are sent at puzzle creation (via front-matter), and via game completion messages.
+
+      Games/Variants/FrontMatter: Supports All Fields. Game Completion: Just "leaderboards""
+    `)
+    expect(info.completions).toMatchInlineSnapshot(`
+      [
+        "leaderboards",
+      ]
+    `)
   })
 })
