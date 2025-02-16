@@ -96,7 +96,7 @@ function App() {
           <Form>
             <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
               <Form.Label>Expression</Form.Label>
-              <ExpressionEditor expressionString={expressionString} setExpressionString={setExpressionString} />
+              <ExpressionEditor expressionString={expressionString} setExpressionString={setExpressionString} scope={scopeResult} />
             </Form.Group>
             <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea1">
               <Form.Label>Scope</Form.Label>
