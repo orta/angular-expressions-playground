@@ -3,7 +3,7 @@ import { createSystem, createVirtualTypeScriptEnvironment } from "@typescript/vf
 import { CompletedConfig, Config, createFormatter, createParser, DEFAULT_CONFIG, SchemaGenerator } from "ts-json-schema-generator"
 import { libDTS } from "./vendor/libDTS"
 import { decompressFromEncodedURIComponent } from "lz-string"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Card from "react-bootstrap/esm/Card"
 import Container from "react-bootstrap/esm/Container"
 import MonacoEditor from "react-monaco-editor"
@@ -42,13 +42,16 @@ export const SchemaEditor = (props: { setSchema: (obj: JSONSchema7) => void }) =
 
     try {
       const result = generator.createSchema()
-      props.setSchema(result)
       return result
     } catch (error: any) {
       setSchemaError(error)
       console.error(error)
     }
-  }, [tsInterface, setSchema])
+  }, [tsInterface, setSchemaError])
+
+  useEffect(() => {
+    if (schema) setSchema(schema)
+  }, [schema, setSchema])
 
   return (
     <Card style={{ margin: "1em" }}>

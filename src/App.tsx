@@ -16,10 +16,13 @@ import { JSONSchema7 } from "json-schema"
 // eslint-disable-next-line no-var
 var scopeResult = {}
 
+import "monaco-editor/esm/vs/editor/editor.all.js"
+
 // Force monaco config for TS to load
 import "monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution"
 // And json
 import "monaco-editor/esm/vs/language/json/monaco.contribution"
+
 import { SchemaEditor } from "./SchemaEditor"
 
 function App() {

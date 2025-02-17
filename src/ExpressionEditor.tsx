@@ -55,6 +55,7 @@ export const ExpressionEditor = (props: {
   const editorWillMount = useCallback<EditorWillMount>(
     (m) => {
       m.languages.register({ id: language })
+
       m.languages.setMonarchTokensProvider(language, {
         tokenizer: {
           root: [
