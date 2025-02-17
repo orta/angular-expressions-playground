@@ -140,7 +140,7 @@ function App() {
         <Col>
           <Tabs defaultActiveKey="result" id="uncontrolled-tab-example" className="mb-3">
             <Tab eventKey="result" title="Result">
-              <Card style={{ margin: "1em" }}>
+              <Card style={{ margin: "1em", wordWrap: "break-word" }}>
                 <Card.Body>
                   <Card.Title>Result</Card.Title>
 

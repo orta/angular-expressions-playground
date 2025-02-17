@@ -65,12 +65,11 @@ export const expressionInspector = (expression: string, config?: { scope?: objec
       }, scope)
 
       let schemaInfo: any = undefined
-      if (config?.schema) {
+      // We only support a schema with a core ref
+      if (config?.schema && config.schema["$ref"]) {
         // We assume that "$ref" is the root of the schema
-        const rootSchemaObj = config.schema["$ref"] ? config.schema : config.schema["$ref"]
-        // @ts-ignore - TODO: Remove
-        const rootPointer = `${(rootSchemaObj?.["$ref"] || "").slice(1)}`
 
+        const rootPointer = config.schema["$ref"].slice(1)
         const root = pointerMap.get(rootPointer)
         if (objectPath.length === 1) schemaInfo = root
         else {
