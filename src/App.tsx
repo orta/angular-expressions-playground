@@ -11,10 +11,9 @@ import expressions, { Lexer } from "angular-expressions"
 import { ASTPreview } from "./ASTPreview"
 import { ExpressionEditor } from "./ExpressionEditor"
 import lzstring, { decompressFromEncodedURIComponent } from "lz-string"
+
 import ts from "typescript"
-
 import { createSystem, createVirtualTypeScriptEnvironment } from "@typescript/vfs"
-
 import { CompletedConfig, Config, createFormatter, createParser, DEFAULT_CONFIG, SchemaGenerator } from "ts-json-schema-generator"
 import { libDTS } from "./vendor/libDTS"
 // eslint-disable-next-line no-var
@@ -99,7 +98,7 @@ function App() {
     const localData = localStorage.getItem("ts")
     return fromParams
       ? decompressFromEncodedURIComponent(fromParams)
-      : localData || "/** My Type **/\nexport type MyType {\n  /** User's ID */\n  id: string\n  /** Their name */\n  name: string\n}"
+      : localData || "/** My Type */\nexport type MyType {\n  /** User's ID */\n  id: string\n  /** Their name */\n  name: string\n}"
   })
 
   const schema = useMemo(() => {
@@ -117,8 +116,6 @@ function App() {
     const parser = createParser(program, config)
     const formatter = createFormatter(config)
     const generator = new SchemaGenerator(program, parser, formatter, schemaConfig)
-
-    console.log("rootf", program.getRootFileNames())
 
     const result = generator.createSchema()
     return result
