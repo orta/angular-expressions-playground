@@ -12,7 +12,7 @@ const monacoEditorPlugin = isObjectWithDefaultFunction(monacoEditorPluginModule)
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), monacoEditorPlugin({ globalAPI: true })],
+  plugins: [react(), monacoEditorPlugin({ globalAPI: true, languageWorkers: ["typescript", "json", "editorWorkerService"] })],
   base: "/angular-expressions-playground/",
   css: {
     preprocessorOptions: {

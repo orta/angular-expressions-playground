@@ -16,6 +16,7 @@ import ts from "typescript"
 import { createSystem, createVirtualTypeScriptEnvironment } from "@typescript/vfs"
 import { CompletedConfig, Config, createFormatter, createParser, DEFAULT_CONFIG, SchemaGenerator } from "ts-json-schema-generator"
 import { libDTS } from "./vendor/libDTS"
+import MonacoEditor from "react-monaco-editor"
 // eslint-disable-next-line no-var
 var scopeResult = {}
 
@@ -124,12 +125,16 @@ function App() {
   return (
     <Container fluid>
       <Row>
+        <Col>
+          <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+            <Form.Label>Expression</Form.Label>
+            <ExpressionEditor expressionString={expressionString} setExpressionString={setExpressionString} scope={scopeResult} />
+          </Form.Group>
+        </Col>
+      </Row>
+      <Row>
         <Col xs={3}>
           <Form>
-            <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
-              <Form.Label>Expression</Form.Label>
-              <ExpressionEditor expressionString={expressionString} setExpressionString={setExpressionString} scope={scopeResult} />
-            </Form.Group>
             <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea1">
               <Form.Label>Scope</Form.Label>
 
@@ -137,6 +142,7 @@ function App() {
                 defaultValue={scopeString}
                 className="form-control font-monospace flex-1"
                 rows={10}
+                maxRows={20}
                 onChange={(e) => setScopeString(e.target.value)}
               />
 
@@ -148,21 +154,26 @@ function App() {
         <Col>
           <Card style={{ margin: "1em" }}>
             <Card.Body>
-              <Card.Title>TS Interface Support via JSON Schema</Card.Title>
+              <Card.Title>Type Support via JSON Schema</Card.Title>
               <Container>
                 <div className="d-flex justify-content-between" style={{ gap: "1em" }}>
-                  <TextAreaAutosize
-                    defaultValue={tsInterface}
-                    className="form-control font-monospace"
-                    rows={10}
-                    onChange={(e) => setTSInterface(e.target.value)}
-                  />
+                  <div className="form-control">
+                    <MonacoEditor
+                      height="400"
+                      value={tsInterface}
+                      onChange={setTSInterface}
+                      language="typescript"
+                      theme="vs"
+                      options={{ scrollBeyondLastLine: false, minimap: { enabled: false } }}
+                    />
+                  </div>
 
                   <TextAreaAutosize
                     disabled
                     className="form-control font-monospace flex-1"
+                    style={{ whiteSpace: "pre-wrap", fontSize: 12 }}
                     rows={10}
-                    value={JSON.stringify(schema, null)}
+                    value={JSON.stringify(schema, null, 2)}
                   />
                 </div>
               </Container>

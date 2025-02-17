@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import MonacoEditor, { EditorDidMount, EditorWillMount, monaco } from "react-monaco-editor"
 // https://github.com/react-monaco-editor/react-monaco-editor/issues/316#issuecomment-2132159796
 import "monaco-editor/esm/vs/editor/editor.all.js"
+import * as m from "monaco-editor"
 
 import { expressionInspector } from "./expressionDevTools"
 
@@ -90,14 +91,26 @@ export const ExpressionEditor = (props: {
 
           const tools = expressionInspector(textUntilPosition, { scope: props.scope })
           const info = tools.infoAtPosition(textUntilPosition.length - 1)
-          console.log(info)
+
+          // Handle accepting the auto-complete mid-way through a word
+          let overlappingLetters: number | undefined = undefined
+          if (info)
+            textUntilPosition
+              .split("")
+              .reverse()
+              .forEach((char, index) => {
+                if (typeof overlappingLetters !== "undefined") return
+                if (char === " " || char === "." || char === "(" || char === ")" || char === "]") {
+                  overlappingLetters = index
+                }
+              })
 
           return {
             incomplete: false,
             suggestions: (info?.completions || []).map((label) => ({
               label,
               kind: monaco.languages.CompletionItemKind.Variable,
-              insertText: label,
+              insertText: label.slice(overlappingLetters),
               range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
             })),
           }
@@ -129,7 +142,7 @@ export const ExpressionEditor = (props: {
         language="expression"
         options={{
           // Style
-          fontSize: 16,
+          fontSize: 24,
           padding: { top: 5, bottom: 0 },
           minimap: { enabled: false },
           selectionHighlight: false,
