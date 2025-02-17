@@ -25,8 +25,7 @@ export const ExpressionEditor = (props: { expressionString: string; scope: objec
   }, [props.expressionString, props.scope])
 
   const editorMounted = useCallback<EditorDidMount>(
-    (e, m) => {
-      console.log("editor mounted")
+    (e) => {
       // Handle width re-sizing
       if (wrapperElement.current) {
         const monacoWatcher = new ResizeObserver(() => e.layout())
@@ -75,7 +74,7 @@ export const ExpressionEditor = (props: { expressionString: string; scope: objec
 
       // auto complete
       m.languages.registerCompletionItemProvider(language, {
-        triggerCharacters: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+        triggerCharacters: [".", " "],
         provideCompletionItems: (model, position) => {
           const textUntilPosition = model.getValueInRange({
             startLineNumber: 1,
@@ -84,7 +83,7 @@ export const ExpressionEditor = (props: { expressionString: string; scope: objec
             endColumn: position.column,
           })
 
-          const tools = expressionInspector(props.expressionString, { scope: props.scope })
+          const tools = expressionInspector(textUntilPosition, { scope: props.scope })
           const info = tools.infoAtPosition(textUntilPosition.length - 1)
 
           return {
@@ -101,8 +100,6 @@ export const ExpressionEditor = (props: { expressionString: string; scope: objec
 
       m.languages.registerHoverProvider(language, {
         provideHover: (model, position) => {
-          console.log("hover")
-          console.log(position)
           const tools = expressionInspector(model.getValue(), { scope: props.scope })
           const info = tools.infoAtPosition(position.column - 1)
 
