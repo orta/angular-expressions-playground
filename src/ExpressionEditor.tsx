@@ -1,16 +1,17 @@
 import { useCallback, useMemo, useRef, useState } from "react"
 import MonacoEditor, { EditorDidMount, EditorWillMount, monaco } from "react-monaco-editor"
-// https://github.com/react-monaco-editor/react-monaco-editor/issues/316#issuecomment-2132159796
-import "monaco-editor/esm/vs/editor/editor.all.js"
-import * as m from "monaco-editor"
+import { JSONSchema7 } from "json-schema"
 
 import { expressionInspector } from "./expressionDevTools"
+import { defaultMonacoSettings } from "./monacoConstants"
 
 const language = "expression"
 
 export const ExpressionEditor = (props: {
   expressionString: string
   scope: object
+  schema: JSONSchema7 | null
+
   setExpressionString: (str: string) => void
   // setHoverPath: (path: any[]) => void
 }) => {
@@ -144,8 +145,6 @@ export const ExpressionEditor = (props: {
           // Style
           fontSize: 24,
           padding: { top: 5, bottom: 0 },
-          minimap: { enabled: false },
-          selectionHighlight: false,
 
           // Single line mode
           wordWrap: "on",
@@ -154,13 +153,7 @@ export const ExpressionEditor = (props: {
           scrollBeyondLastLine: false,
           overviewRulerLanes: 0,
 
-          // Hide left gutter, https://github.com/Microsoft/vscode/issues/30795
-          lineNumbers: "off",
-          showFoldingControls: "never",
-          folding: false,
-          glyphMargin: false,
-          renderLineHighlight: "none",
-          lineNumbersMinChars: 0,
+          ...defaultMonacoSettings,
         }}
         onChange={props.setExpressionString}
         value={props.expressionString}

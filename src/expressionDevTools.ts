@@ -1,7 +1,9 @@
 import { Lexer } from "angular-expressions"
 import traverse from "json-schema-traverse"
 
-export const expressionInspector = (expression: string, config?: { scope?: object; schema?: any }) => {
+import { JSONSchema7 } from "json-schema"
+
+export const expressionInspector = (expression: string, config?: { scope?: object; schema?: JSONSchema7 | null }) => {
   const scope: any = config?.scope || {}
 
   const lexer = new Lexer()
@@ -66,7 +68,8 @@ export const expressionInspector = (expression: string, config?: { scope?: objec
       if (config?.schema) {
         // We assume that "$ref" is the root of the schema
         const rootSchemaObj = config.schema["$ref"] ? config.schema : config.schema["$ref"]
-        const rootPointer = `${rootSchemaObj["$ref"].slice(1)}`
+        // @ts-ignore - TODO: Remove
+        const rootPointer = `${(rootSchemaObj?.["$ref"] || "").slice(1)}`
 
         const root = pointerMap.get(rootPointer)
         if (objectPath.length === 1) schemaInfo = root

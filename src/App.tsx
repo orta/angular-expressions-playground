@@ -11,14 +11,16 @@ import expressions, { Lexer } from "angular-expressions"
 import { ASTPreview } from "./ASTPreview"
 import { ExpressionEditor } from "./ExpressionEditor"
 import lzstring, { decompressFromEncodedURIComponent } from "lz-string"
+import { JSONSchema7 } from "json-schema"
 
-import ts from "typescript"
-import { createSystem, createVirtualTypeScriptEnvironment } from "@typescript/vfs"
-import { CompletedConfig, Config, createFormatter, createParser, DEFAULT_CONFIG, SchemaGenerator } from "ts-json-schema-generator"
-import { libDTS } from "./vendor/libDTS"
-import MonacoEditor from "react-monaco-editor"
 // eslint-disable-next-line no-var
 var scopeResult = {}
+
+// Force monaco config for TS to load
+import "monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution"
+// And json
+import "monaco-editor/esm/vs/language/json/monaco.contribution"
+import { SchemaEditor } from "./SchemaEditor"
 
 function App() {
   const [scopeString, setScopeString] = useState(() => {
@@ -94,33 +96,7 @@ function App() {
     }
   }, [expressionString])
 
-  const [tsInterface, setTSInterface] = useState(() => {
-    const fromParams = new URLSearchParams(document.location.search).get("ts")
-    const localData = localStorage.getItem("ts")
-    return fromParams
-      ? decompressFromEncodedURIComponent(fromParams)
-      : localData || "/** My Type */\nexport type MyType {\n  /** User's ID */\n  id: string\n  /** Their name */\n  name: string\n}"
-  })
-
-  const schema = useMemo(() => {
-    const fsMap = new Map<string, string>()
-    fsMap.set("/schema.ts", tsInterface)
-    fsMap.set("/lib.d.ts", libDTS)
-    const system = createSystem(fsMap)
-    const env = createVirtualTypeScriptEnvironment(system, ["/schema.ts"], ts)
-    const program = env.languageService.getProgram()
-    if (!program) throw new Error("No program")
-
-    const schemaConfig: Config = { path: "/schema.ts" }
-    const config: CompletedConfig = { ...schemaConfig, ...DEFAULT_CONFIG }
-
-    const parser = createParser(program, config)
-    const formatter = createFormatter(config)
-    const generator = new SchemaGenerator(program, parser, formatter, schemaConfig)
-
-    const result = generator.createSchema()
-    return result
-  }, [tsInterface])
+  const [schema, setSchema] = useState<JSONSchema7 | null>(null)
 
   return (
     <Container fluid>
@@ -128,7 +104,12 @@ function App() {
         <Col>
           <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
             <Form.Label>Expression</Form.Label>
-            <ExpressionEditor expressionString={expressionString} setExpressionString={setExpressionString} scope={scopeResult} />
+            <ExpressionEditor
+              expressionString={expressionString}
+              setExpressionString={setExpressionString}
+              scope={scopeResult}
+              schema={schema}
+            />
           </Form.Group>
         </Col>
       </Row>
@@ -152,34 +133,7 @@ function App() {
         </Col>
 
         <Col>
-          <Card style={{ margin: "1em" }}>
-            <Card.Body>
-              <Card.Title>Type Support via JSON Schema</Card.Title>
-              <Container>
-                <div className="d-flex justify-content-between" style={{ gap: "1em" }}>
-                  <div className="form-control">
-                    <MonacoEditor
-                      height="400"
-                      value={tsInterface}
-                      onChange={setTSInterface}
-                      language="typescript"
-                      theme="vs"
-                      options={{ scrollBeyondLastLine: false, minimap: { enabled: false } }}
-                    />
-                  </div>
-
-                  <TextAreaAutosize
-                    disabled
-                    className="form-control font-monospace flex-1"
-                    style={{ whiteSpace: "pre-wrap", fontSize: 12 }}
-                    rows={10}
-                    value={JSON.stringify(schema, null, 2)}
-                  />
-                </div>
-              </Container>
-            </Card.Body>
-          </Card>
-
+          <SchemaEditor setSchema={setSchema} />
           <Card style={{ margin: "1em" }}>
             <Card.Body>
               <Card.Title>Result</Card.Title>
@@ -204,8 +158,9 @@ function App() {
                 <Card.Title>Syntax Tokens</Card.Title>
 
                 <pre style={{ whiteSpace: "pre-wrap", lineHeight: 2.2 }}>
-                  {expressionInfo.tokens.map((t) => (
+                  {expressionInfo.tokens.map((t: any) => (
                     <span
+                      key={JSON.stringify(t)}
                       style={{
                         backgroundColor: "#aabbFF50",
                         padding: 4,

@@ -14,6 +14,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@bithero/monaco-editor-vite-plugin@npm:^1.0.2":
+  version: 1.0.2
+  resolution: "@bithero/monaco-editor-vite-plugin@npm:1.0.2"
+  peerDependencies:
+    monaco-editor: ">= 0.44.0"
+  checksum: 10c0/81f2103bb9831ab5ac98b75d40955e8c56a3f5f4711ec41edc3fdee4854541754878e98c8e9480a54582cc2163afb829e101b43f13b7ced86a06c079264ce184
+  languageName: node
+  linkType: hard
+
 "@bufbuild/protobuf@npm:^2.0.0":
   version: 2.2.3
   resolution: "@bufbuild/protobuf@npm:2.2.3"
@@ -1098,6 +1107,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "angular-expressions-playground@workspace:."
   dependencies:
+    "@bithero/monaco-editor-vite-plugin": "npm:^1.0.2"
     "@eslint/js": "npm:^9.19.0"
     "@types/react": "npm:^19.0.8"
     "@types/react-dom": "npm:^19.0.3"

@@ -1,18 +1,10 @@
 import { defineConfig } from "vite"
+
 import react from "@vitejs/plugin-react-swc"
+import { monaco } from "@bithero/monaco-editor-vite-plugin"
 
-import monacoEditorPluginModule from "vite-plugin-monaco-editor"
-
-const isObjectWithDefaultFunction = (module: unknown): module is { default: typeof monacoEditorPluginModule } =>
-  module != null && typeof module === "object" && "default" in module && typeof module.default === "function"
-
-const monacoEditorPlugin = isObjectWithDefaultFunction(monacoEditorPluginModule)
-  ? monacoEditorPluginModule.default
-  : monacoEditorPluginModule
-
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), monacoEditorPlugin({ globalAPI: true, languageWorkers: ["typescript", "json", "editorWorkerService"] })],
+  plugins: [react(), monaco({ globalAPI: true, languages: "*", features: "*" })],
   base: "/angular-expressions-playground/",
   css: {
     preprocessorOptions: {
