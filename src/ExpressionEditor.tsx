@@ -11,7 +11,7 @@ export const ExpressionEditor = (props: {
   expressionString: string
   scope: object
   setExpressionString: (str: string) => void
-  setHoverPath: (path: any[]) => void
+  // setHoverPath: (path: any[]) => void
 }) => {
   const [height, setHeight] = useState(34)
   const wrapperElement = useRef<HTMLDivElement>(null)
@@ -90,10 +90,11 @@ export const ExpressionEditor = (props: {
 
           const tools = expressionInspector(textUntilPosition, { scope: props.scope })
           const info = tools.infoAtPosition(textUntilPosition.length - 1)
+          console.log(info)
 
           return {
             incomplete: false,
-            suggestions: Object.keys(info?.completions || {}).map((label) => ({
+            suggestions: (info?.completions || []).map((label) => ({
               label,
               kind: monaco.languages.CompletionItemKind.Variable,
               insertText: label,
@@ -107,7 +108,6 @@ export const ExpressionEditor = (props: {
         provideHover: (model, position) => {
           const tools = expressionInspector(model.getValue(), { scope: props.scope })
           const info = tools.infoAtPosition(position.column - 1)
-          props.setHoverPath(info?.chain || [])
 
           if (info) {
             return {
