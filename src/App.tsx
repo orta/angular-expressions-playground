@@ -6,6 +6,8 @@ import Row from "react-bootstrap/esm/Row"
 import Col from "react-bootstrap/esm/Col"
 import Form from "react-bootstrap/esm/Form"
 import Card from "react-bootstrap/esm/Card"
+import Tab from "react-bootstrap/esm/Tab"
+import Tabs from "react-bootstrap/esm/Tabs"
 import TextAreaAutosize from "react-textarea-autosize"
 import expressions, { Lexer } from "angular-expressions"
 import { ASTPreview } from "./ASTPreview"
@@ -120,7 +122,7 @@ function App() {
         <Col xs={3}>
           <Form>
             <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea1">
-              <Form.Label>Scope</Form.Label>
+              <Form.Label>Expression Scope</Form.Label>
 
               <TextAreaAutosize
                 defaultValue={scopeString}
@@ -136,48 +138,57 @@ function App() {
         </Col>
 
         <Col>
-          <SchemaEditor setSchema={setSchema} />
-          <Card style={{ margin: "1em" }}>
-            <Card.Body>
-              <Card.Title>Result</Card.Title>
+          <Tabs defaultActiveKey="result" id="uncontrolled-tab-example" className="mb-3">
+            <Tab eventKey="result" title="Result">
+              <Card style={{ margin: "1em" }}>
+                <Card.Body>
+                  <Card.Title>Result</Card.Title>
 
-              <RenderLiteral value={expressionInfo?.result} />
-            </Card.Body>
-          </Card>
+                  <RenderLiteral value={expressionInfo?.result} />
+                </Card.Body>
+              </Card>
+            </Tab>
 
-          {expressionInfo && (
-            <Card style={{ margin: "1em" }}>
-              <Card.Body>
-                <Card.Title>AST</Card.Title>
+            <Tab eventKey="schema" title="Documentation Schema" mountOnEnter>
+              <SchemaEditor setSchema={setSchema} />
+            </Tab>
 
-                <ASTPreview ast={expressionInfo.compiled.ast} />
-              </Card.Body>
-            </Card>
-          )}
+            <Tab eventKey="ast" title="AST">
+              {expressionInfo && (
+                <Card style={{ margin: "1em" }}>
+                  <Card.Body>
+                    <Card.Title>Syntax Tokens</Card.Title>
 
-          {expressionInfo && (
-            <Card style={{ margin: "1em" }}>
-              <Card.Body>
-                <Card.Title>Syntax Tokens</Card.Title>
+                    <pre style={{ whiteSpace: "pre-wrap", lineHeight: 2.2 }}>
+                      {expressionInfo.tokens.map((t: any) => (
+                        <span
+                          key={JSON.stringify(t)}
+                          style={{
+                            backgroundColor: "#aabbFF50",
+                            padding: 4,
+                            margin: 4,
+                            borderRadius: 4,
+                          }}
+                        >
+                          {JSON.stringify(t)}
+                        </span>
+                      ))}
+                    </pre>
+                  </Card.Body>
+                </Card>
+              )}
 
-                <pre style={{ whiteSpace: "pre-wrap", lineHeight: 2.2 }}>
-                  {expressionInfo.tokens.map((t: any) => (
-                    <span
-                      key={JSON.stringify(t)}
-                      style={{
-                        backgroundColor: "#aabbFF50",
-                        padding: 4,
-                        margin: 4,
-                        borderRadius: 4,
-                      }}
-                    >
-                      {JSON.stringify(t)}
-                    </span>
-                  ))}
-                </pre>
-              </Card.Body>
-            </Card>
-          )}
+              {expressionInfo && (
+                <Card style={{ margin: "1em" }}>
+                  <Card.Body>
+                    <Card.Title>AST</Card.Title>
+
+                    <ASTPreview ast={expressionInfo.compiled.ast} />
+                  </Card.Body>
+                </Card>
+              )}
+            </Tab>
+          </Tabs>
 
           {expressionEvalError && (
             <Form.Text className="text-muted">
