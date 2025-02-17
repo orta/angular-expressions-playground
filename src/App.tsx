@@ -11,7 +11,12 @@ import expressions, { Lexer } from "angular-expressions"
 import { ASTPreview } from "./ASTPreview"
 import { ExpressionEditor } from "./ExpressionEditor"
 import lzstring, { decompressFromEncodedURIComponent } from "lz-string"
+import ts from "typescript"
 
+import { createSystem, createVirtualTypeScriptEnvironment } from "@typescript/vfs"
+
+import { CompletedConfig, Config, createFormatter, createParser, DEFAULT_CONFIG, SchemaGenerator } from "ts-json-schema-generator"
+import { libDTS } from "./vendor/libDTS"
 // eslint-disable-next-line no-var
 var scopeResult = {}
 
@@ -89,6 +94,36 @@ function App() {
     }
   }, [expressionString])
 
+  const [tsInterface, setTSInterface] = useState(() => {
+    const fromParams = new URLSearchParams(document.location.search).get("ts")
+    const localData = localStorage.getItem("ts")
+    return fromParams
+      ? decompressFromEncodedURIComponent(fromParams)
+      : localData || "/** My Type **/\nexport type MyType {\n  /** User's ID */\n  id: string\n  /** Their name */\n  name: string\n}"
+  })
+
+  const schema = useMemo(() => {
+    const fsMap = new Map<string, string>()
+    fsMap.set("/schema.ts", tsInterface)
+    fsMap.set("/lib.d.ts", libDTS)
+    const system = createSystem(fsMap)
+    const env = createVirtualTypeScriptEnvironment(system, ["/schema.ts"], ts)
+    const program = env.languageService.getProgram()
+    if (!program) throw new Error("No program")
+
+    const schemaConfig: Config = { path: "/schema.ts" }
+    const config: CompletedConfig = { ...schemaConfig, ...DEFAULT_CONFIG }
+
+    const parser = createParser(program, config)
+    const formatter = createFormatter(config)
+    const generator = new SchemaGenerator(program, parser, formatter, schemaConfig)
+
+    console.log("rootf", program.getRootFileNames())
+
+    const result = generator.createSchema()
+    return result
+  }, [tsInterface])
+
   return (
     <Container fluid>
       <Row>
@@ -100,9 +135,10 @@ function App() {
             </Form.Group>
             <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea1">
               <Form.Label>Scope</Form.Label>
+
               <TextAreaAutosize
                 defaultValue={scopeString}
-                className="form-control font-monospace"
+                className="form-control font-monospace flex-1"
                 rows={10}
                 onChange={(e) => setScopeString(e.target.value)}
               />
@@ -111,13 +147,36 @@ function App() {
             </Form.Group>
           </Form>
         </Col>
+
         <Col>
           <Card style={{ margin: "1em" }}>
             <Card.Body>
+              <Card.Title>TS Interface Support via JSON Schema</Card.Title>
+              <Container>
+                <div className="d-flex justify-content-between" style={{ gap: "1em" }}>
+                  <TextAreaAutosize
+                    defaultValue={tsInterface}
+                    className="form-control font-monospace"
+                    rows={10}
+                    onChange={(e) => setTSInterface(e.target.value)}
+                  />
+
+                  <TextAreaAutosize
+                    disabled
+                    className="form-control font-monospace flex-1"
+                    rows={10}
+                    value={JSON.stringify(schema, null)}
+                  />
+                </div>
+              </Container>
+            </Card.Body>
+          </Card>
+
+          <Card style={{ margin: "1em" }}>
+            <Card.Body>
               <Card.Title>Result</Card.Title>
-              <Card.Text>
-                <RenderLiteral value={expressionInfo?.result} />
-              </Card.Text>
+
+              <RenderLiteral value={expressionInfo?.result} />
             </Card.Body>
           </Card>
 
@@ -125,9 +184,8 @@ function App() {
             <Card style={{ margin: "1em" }}>
               <Card.Body>
                 <Card.Title>AST</Card.Title>
-                <Card.Text>
-                  <ASTPreview ast={expressionInfo.compiled.ast} />
-                </Card.Text>
+
+                <ASTPreview ast={expressionInfo.compiled.ast} />
               </Card.Body>
             </Card>
           )}
@@ -136,22 +194,21 @@ function App() {
             <Card style={{ margin: "1em" }}>
               <Card.Body>
                 <Card.Title>Syntax Tokens</Card.Title>
-                <Card.Text>
-                  <pre style={{ whiteSpace: "pre-wrap", lineHeight: 2.2 }}>
-                    {expressionInfo.tokens.map((t) => (
-                      <span
-                        style={{
-                          backgroundColor: "#aabbFF50",
-                          padding: 4,
-                          margin: 4,
-                          borderRadius: 4,
-                        }}
-                      >
-                        {JSON.stringify(t)}
-                      </span>
-                    ))}
-                  </pre>
-                </Card.Text>
+
+                <pre style={{ whiteSpace: "pre-wrap", lineHeight: 2.2 }}>
+                  {expressionInfo.tokens.map((t) => (
+                    <span
+                      style={{
+                        backgroundColor: "#aabbFF50",
+                        padding: 4,
+                        margin: 4,
+                        borderRadius: 4,
+                      }}
+                    >
+                      {JSON.stringify(t)}
+                    </span>
+                  ))}
+                </pre>
               </Card.Body>
             </Card>
           )}

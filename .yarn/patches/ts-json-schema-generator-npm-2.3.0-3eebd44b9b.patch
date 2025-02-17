@@ -1,0 +1,35 @@
+diff --git a/dist/factory/program.js b/dist/factory/program.js
+index 67131b06b6e588557c57562fd3928cf7908a6571..5e73025e69e5d837b714515945b282fa906e7320 100644
+--- a/dist/factory/program.js
++++ b/dist/factory/program.js
+@@ -6,7 +6,7 @@ const path = tslib_1.__importStar(require("node:path"));
+ const normalize_path_1 = tslib_1.__importDefault(require("normalize-path"));
+ const typescript_1 = tslib_1.__importDefault(require("typescript"));
+ const Errors_js_1 = require("../src/Error/Errors.js");
+-const glob_1 = require("glob");
++/* const glob_1 = require("glob");*/
+ function loadTsConfigFile(configFile) {
+     const raw = typescript_1.default.sys.readFile(configFile);
+     if (!raw) {
+@@ -51,7 +51,7 @@ function getTsConfig(config) {
+ }
+ function createProgram(config) {
+     const rootNamesFromPath = config.path
+-        ? (0, glob_1.globSync)((0, normalize_path_1.default)(path.resolve(config.path))).map((rootName) => (0, normalize_path_1.default)(rootName))
++        ? [] //(0, glob_1.globSync)((0, normalize_path_1.default)(path.resolve(config.path))).map((rootName) => (0, normalize_path_1.default)(rootName))
+         : [];
+     const tsconfig = getTsConfig(config);
+     const rootNames = rootNamesFromPath.length ? rootNamesFromPath : tsconfig.fileNames;
+diff --git a/dist/src/Utils/nodeKey.js b/dist/src/Utils/nodeKey.js
+index 5bfe496d68203cb52d2117d0f229af845874d393..b42ee8241de2eb071738ac95d296c7c728c07d3c 100644
+--- a/dist/src/Utils/nodeKey.js
++++ b/dist/src/Utils/nodeKey.js
+@@ -31,7 +31,7 @@ function getKey(node, context) {
+             ids.push(Math.random());
+         }
+         else {
+-            const filename = source.fileName.substring(process.cwd().length + 1).replace(/\//g, "_");
++            const filename = source.fileName/*.substring( process.cwd().length + 1) */.replace(/\//g, "_");
+             ids.push(hash(filename), node.pos, node.end);
+         }
+         node = node.parent;

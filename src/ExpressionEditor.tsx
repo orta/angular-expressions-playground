@@ -7,7 +7,12 @@ import { expressionInspector } from "./expressionDevTools"
 
 const language = "expression"
 
-export const ExpressionEditor = (props: { expressionString: string; scope: object; setExpressionString: (str: string) => void }) => {
+export const ExpressionEditor = (props: {
+  expressionString: string
+  scope: object
+  setExpressionString: (str: string) => void
+  setHoverPath: (path: any[]) => void
+}) => {
   const [height, setHeight] = useState(34)
   const wrapperElement = useRef<HTMLDivElement>(null)
   const setDefaultHeight = useRef(false)
@@ -102,6 +107,7 @@ export const ExpressionEditor = (props: { expressionString: string; scope: objec
         provideHover: (model, position) => {
           const tools = expressionInspector(model.getValue(), { scope: props.scope })
           const info = tools.infoAtPosition(position.column - 1)
+          props.setHoverPath(info?.chain || [])
 
           if (info) {
             return {
