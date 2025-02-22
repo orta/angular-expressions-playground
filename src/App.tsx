@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { use } from "react"
 import "./App.scss"
 
 import Container from "react-bootstrap/esm/Container"
@@ -9,14 +9,8 @@ import Card from "react-bootstrap/esm/Card"
 import Tab from "react-bootstrap/esm/Tab"
 import Tabs from "react-bootstrap/esm/Tabs"
 import TextAreaAutosize from "react-textarea-autosize"
-import expressions, { Lexer } from "angular-expressions"
 import { ASTPreview } from "./ASTPreview"
 import { ExpressionEditor } from "./ExpressionEditor"
-import lzstring, { decompressFromEncodedURIComponent } from "lz-string"
-import { JSONSchema7 } from "json-schema"
-
-// eslint-disable-next-line no-var
-var scopeResult = {}
 
 import "monaco-editor/esm/vs/editor/editor.all.js"
 
@@ -26,82 +20,10 @@ import "monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution"
 import "monaco-editor/esm/vs/language/json/monaco.contribution"
 
 import { SchemaEditor } from "./SchemaEditor"
+import { getScopeResult, RootContext } from "./RootContext"
 
 function App() {
-  const [scopeString, setScopeString] = useState(() => {
-    const fromParams = new URLSearchParams(document.location.search).get("scope")
-    const localData = localStorage.getItem("scopeData")
-    return fromParams
-      ? decompressFromEncodedURIComponent(fromParams)
-      : localData || '{ user: { id: "123", name: "Jane Doe" }, data: { a:[ 1, 2, 3]} }'
-  })
-
-  const [scopeEvalError, setScopeEvalError] = useState<Error | null>(null)
-
-  // We want the global side-effect from this
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _scopeEvaled = useMemo(() => {
-    try {
-      setScopeEvalError(null)
-      return eval(`scopeResult = ${scopeString}; scopeResult`)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (e: any) {
-      setScopeEvalError(e)
-      return null
-    }
-  }, [scopeString])
-
-  const [expressionString, setExpressionString] = useState(() => {
-    const fromParams = new URLSearchParams(document.location.search).get("expression")
-    const localData = localStorage.getItem("expressionString")
-    return fromParams ? decompressFromEncodedURIComponent(fromParams) : localData || "user.id"
-  })
-
-  useEffect(() => {
-    localStorage.setItem("scopeData", scopeString)
-    localStorage.setItem("expressionString", expressionString)
-
-    const options = new URLSearchParams(document.location.search)
-    options.set("scope", lzstring.compressToEncodedURIComponent(scopeString))
-    options.set("expression", lzstring.compressToEncodedURIComponent(expressionString))
-
-    const newUrl = `${document.location.origin}${document.location.pathname}?${options.toString()}`
-    window.history.replaceState({}, "", newUrl)
-  }, [scopeString, expressionString])
-
-  const [expressionEvalError, setExpressionEvalError] = useState<Error | null>(null)
-  const expressionInfo = useMemo(() => {
-    try {
-      setExpressionEvalError(null)
-      const expression = expressions.compile(expressionString)
-      const seen: any[] = []
-      const astString = JSON.stringify(expression.ast, function (key, val) {
-        if (val != null && typeof val == "object") {
-          if (seen.indexOf(val) >= 0) return
-          seen.push(val)
-        }
-        return val
-      })
-
-      const lexer = new Lexer()
-      // @ts-expect-error - Lexer does not have a type
-      const tokens = lexer.lex(expressionString)
-
-      return {
-        compiled: expression,
-        result: expression(scopeResult),
-        astString,
-        tokens,
-        scopeResult,
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (e: any) {
-      setExpressionEvalError(e)
-      return null
-    }
-  }, [expressionString])
-
-  const [schema, setSchema] = useState<JSONSchema7 | null>(null)
+  const ctx = use(RootContext)
 
   return (
     <Container fluid>
@@ -110,10 +32,10 @@ function App() {
           <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
             <Form.Label>Expression</Form.Label>
             <ExpressionEditor
-              expressionString={expressionString}
-              setExpressionString={setExpressionString}
-              scope={scopeResult}
-              schema={schema}
+              expressionString={ctx.expressionString}
+              setExpressionString={ctx.setExpressionString}
+              scope={getScopeResult()}
+              schema={ctx.schema}
             />
           </Form.Group>
         </Col>
@@ -125,14 +47,14 @@ function App() {
               <Form.Label>Expression Scope</Form.Label>
 
               <TextAreaAutosize
-                defaultValue={scopeString}
+                defaultValue={ctx.scopeString}
                 className="form-control font-monospace flex-1"
                 rows={10}
                 maxRows={20}
-                onChange={(e) => setScopeString(e.target.value)}
+                onChange={(e) => ctx.setScopeString(e.target.value)}
               />
 
-              <Form.Text className="text-muted">{scopeEvalError ? <pre>{scopeEvalError.message}</pre> : null}</Form.Text>
+              <Form.Text className="text-muted">{ctx.scopeEvalError ? <pre>{ctx.scopeEvalError.message}</pre> : null}</Form.Text>
             </Form.Group>
           </Form>
         </Col>
@@ -144,23 +66,23 @@ function App() {
                 <Card.Body>
                   <Card.Title>Result</Card.Title>
 
-                  <RenderLiteral value={expressionInfo?.result} />
+                  <RenderLiteral value={ctx.expressionRunResult?.result} />
                 </Card.Body>
               </Card>
             </Tab>
 
             <Tab eventKey="schema" title="Documentation Schema" mountOnEnter>
-              <SchemaEditor setSchema={setSchema} />
+              <SchemaEditor />
             </Tab>
 
             <Tab eventKey="ast" title="AST">
-              {expressionInfo && (
+              {ctx.expressionRunResult && (
                 <Card style={{ margin: "1em" }}>
                   <Card.Body>
                     <Card.Title>Syntax Tokens</Card.Title>
 
                     <pre style={{ whiteSpace: "pre-wrap", lineHeight: 2.2 }}>
-                      {expressionInfo.tokens.map((t: any) => (
+                      {ctx.expressionRunResult.tokens.map((t: any) => (
                         <span
                           key={JSON.stringify(t)}
                           style={{
@@ -178,21 +100,21 @@ function App() {
                 </Card>
               )}
 
-              {expressionInfo && (
+              {ctx.expressionRunResult && (
                 <Card style={{ margin: "1em" }}>
                   <Card.Body>
                     <Card.Title>AST</Card.Title>
 
-                    <ASTPreview ast={expressionInfo.compiled.ast} />
+                    <ASTPreview ast={ctx.expressionRunResult.compiled.ast} />
                   </Card.Body>
                 </Card>
               )}
             </Tab>
           </Tabs>
 
-          {expressionEvalError && (
+          {ctx.expressionEvalError && (
             <Form.Text className="text-muted">
-              <pre>{expressionEvalError.message}</pre>
+              <pre>{ctx.expressionEvalError.message}</pre>
             </Form.Text>
           )}
         </Col>

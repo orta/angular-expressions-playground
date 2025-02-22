@@ -101,12 +101,15 @@ export const expressionInspector = (expression: string, config?: { scope?: objec
       }
 
       // A monaco partial
-      type Completion = { label: string; documentation?: string }
+      type Completion = { label: string; detail?: string }
 
       const scopeCompletion = Object.keys(scopeObject)
       const schemaCompletion: Completion[] = []
       for (const key of Object.keys(schemaInfo?.properties || {})) {
-        schemaCompletion.push({ label: key, documentation: schemaInfo.properties[key].description })
+        schemaCompletion.push({
+          label: key,
+          detail: schemaInfo.properties[key].description,
+        })
       }
 
       const allCompletions: Completion[] = [...scopeCompletion.map((c) => ({ label: c })), ...schemaCompletion]

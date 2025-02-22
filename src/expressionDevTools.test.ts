@@ -175,7 +175,7 @@ describe("json schema", () => {
       completions: [
        {
         "label": "leaderboards",
-        "documentation": "Dynamic leaderboards for this game"
+        "detail": "Dynamic leaderboards for this game"
        }
       ]"
     `)
@@ -197,7 +197,7 @@ describe("json schema", () => {
       completions: [
        {
         "label": "user",
-        "documentation": "Your user account"
+        "detail": "Your user account"
        }
       ]"
     `)
@@ -221,7 +221,7 @@ it("handles grabbing info from a json schema with a nested scope object", () => 
     completions: [
      {
       "label": "name",
-      "documentation": "Their name"
+      "detail": "Their name"
      }
     ]"
   `)

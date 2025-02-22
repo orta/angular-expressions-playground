@@ -12,6 +12,9 @@ const language = "expression"
 // However, thats fine for this sandbox.
 let getEditorTools = (text: string) => expressionInspector(text)
 
+// As monaco is a global, we need to ensure we only set up the language tools once
+let didSetupLanguageTools = false
+
 export const ExpressionEditor = (props: {
   expressionString: string
   scope: object
@@ -62,6 +65,10 @@ export const ExpressionEditor = (props: {
 
   const editorWillMount = useCallback<EditorWillMount>(
     (m) => {
+      // m is a global, so these can only really get called once
+      if (didSetupLanguageTools) return
+      didSetupLanguageTools = true
+
       m.languages.register({ id: language })
 
       m.languages.setMonarchTokensProvider(language, {
@@ -153,6 +160,7 @@ export const ExpressionEditor = (props: {
         options={{
           // Style
           fontSize: 24,
+          suggestFontSize: 16,
           padding: { top: 5, bottom: 0 },
 
           // Single line mode
