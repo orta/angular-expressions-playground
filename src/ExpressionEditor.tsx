@@ -7,13 +7,16 @@ import { defaultMonacoSettings } from "./monacoConstants"
 
 const language = "expression"
 
+// We need a thunk to get access to the latest info from the expression editor.
+// This technique is a hack, because it only works with one expression editor per page.
+// However, thats fine for this sandbox.
+let getEditorTools = (text: string) => expressionInspector(text)
+
 export const ExpressionEditor = (props: {
   expressionString: string
   scope: object
   schema: JSONSchema7 | null
-
   setExpressionString: (str: string) => void
-  // setHoverPath: (path: any[]) => void
 }) => {
   const [height, setHeight] = useState(34)
   const wrapperElement = useRef<HTMLDivElement>(null)
@@ -51,6 +54,11 @@ export const ExpressionEditor = (props: {
 
     [updateHeight, tools]
   )
+
+  getEditorTools = (text) => {
+    const res = expressionInspector(text, { scope: props.scope, schema: props.schema })
+    return res
+  }
 
   const editorWillMount = useCallback<EditorWillMount>(
     (m) => {
@@ -91,7 +99,7 @@ export const ExpressionEditor = (props: {
             endColumn: position.column,
           })
 
-          const tools = expressionInspector(textUntilPosition, { scope: props.scope })
+          const tools = getEditorTools(textUntilPosition)
           const info = tools.infoAtPosition(textUntilPosition.length - 1)
 
           // Handle accepting the auto-complete mid-way through a word
@@ -109,10 +117,10 @@ export const ExpressionEditor = (props: {
 
           return {
             incomplete: false,
-            suggestions: (info?.completions || []).map((label) => ({
-              label,
+            suggestions: (info?.completions || []).map((c) => ({
+              ...c,
               kind: monaco.languages.CompletionItemKind.Variable,
-              insertText: label.slice(overlappingLetters),
+              insertText: c.label.slice(overlappingLetters),
               range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
             })),
           }
@@ -121,12 +129,12 @@ export const ExpressionEditor = (props: {
 
       m.languages.registerHoverProvider(language, {
         provideHover: (model, position) => {
-          const tools = expressionInspector(model.getValue(), { scope: props.scope })
+          const tools = getEditorTools(model.getValue())
           const info = tools.infoAtPosition(position.column - 1)
 
           if (info) {
             return {
-              contents: [{ value: info.path }, { value: JSON.stringify(info.scopeObject, null, 2) }],
+              contents: [{ value: info.schemaInfo?.description }, { value: JSON.stringify(info.scopeObject, null, 2) }],
             }
           }
         },

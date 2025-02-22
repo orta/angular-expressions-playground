@@ -1,6 +1,6 @@
 import { it, expect, describe } from "vitest"
-import { expressionInspector } from "./expressionDevTools"
-import { augmentationSchema } from "./augmentsSchema"
+import { expressionInspector, InfoAtPosition } from "./expressionDevTools"
+import { augmentationSchema, userSchema } from "./schemasForTests"
 
 it("should return the correct value", () => {
   const tool = expressionInspector("user.name + 1")
@@ -79,8 +79,12 @@ describe("infoAtPosition", () => {
       `)
       expect(tool.infoAtPosition(4)?.completions).toMatchInlineSnapshot(`
         [
-          "id",
-          "name",
+          {
+            "label": "id",
+          },
+          {
+            "label": "name",
+          },
         ]
       `)
     })
@@ -99,7 +103,9 @@ describe("infoAtPosition", () => {
       `)
       expect(info.completions).toMatchInlineSnapshot(`
         [
-          "name",
+          {
+            "label": "name",
+          },
         ]
       `)
     })
@@ -118,7 +124,9 @@ describe("infoAtPosition", () => {
     `)
     expect(info.completions).toMatchInlineSnapshot(`
       [
-        "e",
+        {
+          "label": "e",
+        },
       ]
     `)
   })
@@ -133,6 +141,22 @@ describe("infoAtPosition", () => {
   })
 })
 
+const toRecommendationString = (res: InfoAtPosition) => {
+  if (!res) return "[no info]"
+  const lines = []
+  if (res.char) lines.push(`char: ${res.char}`)
+  if (res.path) lines.push(`path: ${res.path}`)
+  if (res.schemaInfo) {
+    lines.push(`schemaInfo: {`)
+    if (res.schemaInfo.description) lines.push(`   description: ${res.schemaInfo.description.split("\n")[0].slice(0, 50)}...`)
+    if (res.schemaInfo.properties) lines.push(`   properties: ${Object.keys(res.schemaInfo.properties).join(", ")}`)
+    lines.push(` }`)
+  }
+  if (res.scopeObject) lines.push(`scopeObject: ${JSON.stringify(res.scopeObject)}`)
+  if (res.completions) lines.push(`completions: ${JSON.stringify(res.completions, null, 1)}`)
+  return lines.join("\n")
+}
+
 describe("json schema", () => {
   it("handles grabbing info from a json schema", () => {
     const tool = expressionInspector("leaderboa", {
@@ -140,17 +164,65 @@ describe("json schema", () => {
     })
 
     const info = tool.infoAtPosition(3)!
-    expect(info.char).toMatchInlineSnapshot(`"d"`)
-    expect(info.path).toMatchInlineSnapshot(`"leaderboa"`)
-    expect(info.schemaInfo.description).toMatchInlineSnapshot(`
-      "Site-wide hooks which are sent at puzzle creation (via front-matter), and via game completion messages.
-
-      Games/Variants/FrontMatter: Supports All Fields. Game Completion: Just "leaderboards""
-    `)
-    expect(info.completions).toMatchInlineSnapshot(`
-      [
-        "leaderboards",
-      ]
+    expect(toRecommendationString(info)).toMatchInlineSnapshot(`
+      "char: d
+      path: leaderboa
+      schemaInfo: {
+         description: Site-wide hooks which are sent at puzzle creation ...
+         properties: leaderboards, puzzleAggregateStats, userAggregateStats, persistedDeeds, completionTable, completionSidebar, forceGameSettings
+       }
+      scopeObject: {}
+      completions: [
+       {
+        "label": "leaderboards",
+        "documentation": "Dynamic leaderboards for this game"
+       }
+      ]"
     `)
   })
+
+  it("handles grabbing info from the root scope", () => {
+    const tool = expressionInspector("use", {
+      schema: userSchema,
+    })
+
+    const info = tool.infoAtPosition(2)!
+    expect(toRecommendationString(info)).toMatchInlineSnapshot(`
+      "char: e
+      path: use
+      schemaInfo: {
+         properties: user
+       }
+      scopeObject: {}
+      completions: [
+       {
+        "label": "user",
+        "documentation": "Your user account"
+       }
+      ]"
+    `)
+  })
+})
+
+it("handles grabbing info from a json schema with a nested scope object", () => {
+  const tool = expressionInspector("user.n", {
+    schema: userSchema,
+  })
+
+  const info = tool.infoAtPosition(5)!
+  expect(toRecommendationString(info)).toMatchInlineSnapshot(`
+    "char: n
+    path: user.n
+    schemaInfo: {
+       description: Your user account...
+       properties: id, name, displayName
+     }
+    scopeObject: {}
+    completions: [
+     {
+      "label": "name",
+      "documentation": "Their name"
+     }
+    ]"
+  `)
 })

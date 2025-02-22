@@ -17,7 +17,21 @@ export const SchemaEditor = (props: { setSchema: (obj: JSONSchema7) => void }) =
     const localData = localStorage.getItem("ts")
     return fromParams
       ? decompressFromEncodedURIComponent(fromParams)
-      : localData || "/** My Type */\nexport type MyType {\n  /** User's ID */\n  id: string\n  /** Their name */\n  name: string\n}"
+      : localData ||
+          `export type Scope {
+ /** Your user account */
+  user: User
+}
+
+/** My Type */
+type User {
+  /** User's ID */
+  id: string
+  /** Their name */
+  name: string
+  /** Their firstname + last name */
+  displayName: string
+}`
   })
 
   const [schemaError, setSchemaError] = useState<Error | null>(null)

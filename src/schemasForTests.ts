@@ -258,3 +258,52 @@ export const augmentationSchema = {
     },
   },
 }
+
+// export type Scope {
+//  /** Your user account */
+//   user: User
+// }
+//
+// /** My Type */
+// type User {
+//   /** User's ID */
+//   id: string
+//   /** Their name */
+//   name: string
+//   /** Their firstname + last name */
+//   displayName: string
+// }
+
+export const userSchema = {
+  $schema: "http://json-schema.org/draft-07/schema#",
+  $ref: "#/definitions/Scope",
+  definitions: {
+    Scope: {
+      type: "object",
+      properties: {
+        user: {
+          type: "object",
+          properties: {
+            id: {
+              type: "string",
+              description: "User's ID",
+            },
+            name: {
+              type: "string",
+              description: "Their name",
+            },
+            displayName: {
+              type: "string",
+              description: "Their firstname + last name",
+            },
+          },
+          required: ["id", "name", "displayName"],
+          additionalProperties: false,
+          description: "Your user account",
+        },
+      },
+      required: ["user"],
+      additionalProperties: false,
+    },
+  },
+}

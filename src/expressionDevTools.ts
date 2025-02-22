@@ -59,6 +59,15 @@ export const expressionInspector = (expression: string, config?: { scope?: objec
         }
       }
 
+      /**
+       * This is a direct list of things to look up, not syntax tokens like above
+       * so "x.y.z" would be ["x", "y", "z"]
+       */
+      const lookupPath = [] as string[]
+      for (const token of objectPath) {
+        if (isIdentifier(token)) lookupPath.push(token.text)
+      }
+
       const scopeObject = objectPath.reduce((acc, token) => {
         if (isIdentifier(token) && acc[token.text]) return acc[token.text]
         return acc
@@ -66,21 +75,43 @@ export const expressionInspector = (expression: string, config?: { scope?: objec
 
       let schemaInfo: any = undefined
       // We only support a schema with a core ref
-      if (config?.schema && config.schema["$ref"]) {
-        // We assume that "$ref" is the root of the schema
+      if (config?.schema) {
+        if (!config.schema["$ref"]) {
+          console.warn("Schema does not have a $ref, so we cannot provide schema information.")
+        } else {
+          // We  assume that "$ref" is the root of the schema
+          const rootPointer = config.schema["$ref"].slice(1)
+          const root = pointerMap.get(rootPointer)
 
-        const rootPointer = config.schema["$ref"].slice(1)
-        const root = pointerMap.get(rootPointer)
-        if (objectPath.length === 1) schemaInfo = root
-        else {
-          // TODO:
+          if (objectPath.length === 1) {
+            schemaInfo = root
+          } else {
+            for (let i = 0; i < objectPath.length; i++) {
+              const token = lookupPath[i]
+              // Try appending directly. This is a bit naive, because I'm sure there
+              // are many ways to describe a path in a schema but it works for now
+              const appendedPointer = `${rootPointer}/properties/${token}`
+              const child = pointerMap.get(appendedPointer)
+              if (child) {
+                schemaInfo = child
+              }
+            }
+          }
         }
       }
 
-      const scopeCompletion = Object.keys(scopeObject)
-      const schemaCompletion = schemaInfo && schemaInfo.properties ? Object.keys(schemaInfo.properties) : []
-      const completions = [...scopeCompletion, ...schemaCompletion]
+      // A monaco partial
+      type Completion = { label: string; documentation?: string }
 
+      const scopeCompletion = Object.keys(scopeObject)
+      const schemaCompletion: Completion[] = []
+      for (const key of Object.keys(schemaInfo?.properties || {})) {
+        schemaCompletion.push({ label: key, documentation: schemaInfo.properties[key].description })
+      }
+
+      const allCompletions: Completion[] = [...scopeCompletion.map((c) => ({ label: c })), ...schemaCompletion]
+      // De-dupe
+      const completions = allCompletions.filter((c, i) => allCompletions.findIndex((cc) => cc.label === c.label) === i)
       const lastToken = objectPath[objectPath.length - 1]
 
       return {
@@ -88,7 +119,7 @@ export const expressionInspector = (expression: string, config?: { scope?: objec
         chain: objectPath,
         path: objectPath.map((token) => token.text).join(""),
         scopeObject,
-        completions: onDot ? completions : completions.filter((key) => key.startsWith(lastToken.text)),
+        completions: onDot ? completions : completions.filter((c) => c.label.startsWith(lastToken.text)),
         schemaInfo,
       }
     },
@@ -97,6 +128,9 @@ export const expressionInspector = (expression: string, config?: { scope?: objec
     },
   }
 }
+
+export type ExpressionInspector = ReturnType<typeof expressionInspector>
+export type InfoAtPosition = ReturnType<ExpressionInspector["infoAtPosition"]>
 
 type IdentifierToken = { index: number; text: string; identifier: true }
 type DotToken = { index: number; text: "." }
