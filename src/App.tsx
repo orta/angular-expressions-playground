@@ -59,7 +59,7 @@ function App() {
           </Form>
         </Col>
 
-        <Col>
+        <Col xs={9}>
           <Tabs defaultActiveKey="result" id="uncontrolled-tab-example" className="mb-3">
             <Tab eventKey="result" title="Result">
               <Card style={{ margin: "1em", wordWrap: "break-word" }}>
@@ -114,7 +114,7 @@ function App() {
 
           {ctx.expressionEvalError && (
             <Form.Text className="text-muted">
-              <pre>{ctx.expressionEvalError.message}</pre>
+              <pre style={{ wordBreak: "break-word", wordWrap: "break-word" }}>{ctx.expressionEvalError.message}</pre>
             </Form.Text>
           )}
         </Col>

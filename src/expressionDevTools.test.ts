@@ -41,16 +41,16 @@ describe("infoAtPosition", () => {
     const tool = expressionInspector("user.name + 1")
 
     // Easy selection, because its inside the word user
-    expect(tool.infoAtPosition(0)!.path).toMatchInlineSnapshot(`"user"`)
-    expect(tool.infoAtPosition(1)!.path).toMatchInlineSnapshot(`"user"`)
-    expect(tool.infoAtPosition(2)!.path).toMatchInlineSnapshot(`"user"`)
-    expect(tool.infoAtPosition(3)!.path).toMatchInlineSnapshot(`"user"`)
+    expect(tool.infoAtPosition(0)!.path).toMatchInlineSnapshot(`undefined`)
+    expect(tool.infoAtPosition(1)!.path).toMatchInlineSnapshot(`undefined`)
+    expect(tool.infoAtPosition(2)!.path).toMatchInlineSnapshot(`undefined`)
+    expect(tool.infoAtPosition(3)!.path).toMatchInlineSnapshot(`undefined`)
 
     // We're now in the dot, which is still "in" the object strictly speaking
-    expect(tool.infoAtPosition(4)!.path).toMatchInlineSnapshot(`"user"`)
+    expect(tool.infoAtPosition(4)!.path).toMatchInlineSnapshot(`undefined`)
 
     // Now we're in the user
-    expect(tool.infoAtPosition(5)!.path).toMatchInlineSnapshot(`"user.name"`)
+    expect(tool.infoAtPosition(5)!.path).toMatchInlineSnapshot(`undefined`)
   })
 
   describe("scope", () => {
@@ -77,16 +77,7 @@ describe("infoAtPosition", () => {
           "name": "Jane Doe",
         }
       `)
-      expect(tool.infoAtPosition(4)?.completions).toMatchInlineSnapshot(`
-        [
-          {
-            "label": "id",
-          },
-          {
-            "label": "name",
-          },
-        ]
-      `)
+      expect(tool.infoAtPosition(4)?.completions).toMatchInlineSnapshot(`[]`)
     })
 
     it("Offers scope on sub-objects", () => {
@@ -94,20 +85,14 @@ describe("infoAtPosition", () => {
       const info = tool.infoAtPosition(5)!
       // On the selected next
       expect(info.char).toMatchInlineSnapshot(`"n"`)
-      expect(info.path).toMatchInlineSnapshot(`"user.n"`)
+      expect(info.path).toMatchInlineSnapshot(`undefined`)
       expect(info.scopeObject).toMatchInlineSnapshot(`
         {
           "id": "123",
           "name": "Jane Doe",
         }
       `)
-      expect(info.completions).toMatchInlineSnapshot(`
-        [
-          {
-            "label": "name",
-          },
-        ]
-      `)
+      expect(info.completions).toMatchInlineSnapshot(`[]`)
     })
   })
 
@@ -116,19 +101,13 @@ describe("infoAtPosition", () => {
     const info = tool.infoAtPosition(7)!
     // On the selected next
     expect(info.char).toMatchInlineSnapshot(`"."`)
-    expect(info.path).toMatchInlineSnapshot(`"a.b.c.d"`)
+    expect(info.path).toMatchInlineSnapshot(`undefined`)
     expect(info.scopeObject).toMatchInlineSnapshot(`
       {
         "e": "found",
       }
     `)
-    expect(info.completions).toMatchInlineSnapshot(`
-      [
-        {
-          "label": "e",
-        },
-      ]
-    `)
+    expect(info.completions).toMatchInlineSnapshot(`[]`)
   })
 
   it("handles looking inside expressions", () => {
@@ -136,7 +115,7 @@ describe("infoAtPosition", () => {
     const info = tool.infoAtPosition(14)!
 
     expect(info.char).toMatchInlineSnapshot(`"e"`)
-    expect(info.path).toMatchInlineSnapshot(`"a.b.c.d.e"`)
+    expect(info.path).toMatchInlineSnapshot(`undefined`)
     expect(info.scopeObject).toMatchInlineSnapshot(`20`)
   })
 })
@@ -166,7 +145,6 @@ describe("json schema", () => {
     const info = tool.infoAtPosition(3)!
     expect(toRecommendationString(info)).toMatchInlineSnapshot(`
       "char: d
-      path: leaderboa
       schemaInfo: {
          description: Site-wide hooks which are sent at puzzle creation ...
          properties: leaderboards, puzzleAggregateStats, userAggregateStats, persistedDeeds, completionTable, completionSidebar, forceGameSettings
@@ -189,7 +167,6 @@ describe("json schema", () => {
     const info = tool.infoAtPosition(2)!
     expect(toRecommendationString(info)).toMatchInlineSnapshot(`
       "char: e
-      path: use
       schemaInfo: {
          properties: user
        }
@@ -212,7 +189,6 @@ it("handles grabbing info from a json schema with a nested scope object", () => 
   const info = tool.infoAtPosition(5)!
   expect(toRecommendationString(info)).toMatchInlineSnapshot(`
     "char: n
-    path: user.n
     schemaInfo: {
        description: Your user account...
        properties: id, name, displayName

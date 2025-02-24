@@ -20,7 +20,7 @@ export const SchemaEditor = () => {
                 language="typescript"
                 value={ctx.tsInterfaceForSchema}
                 onChange={ctx.setTSInterfaceForSchema}
-                options={defaultMonacoSettings}
+                options={{ ...defaultMonacoSettings, automaticLayout: true }}
               />
             </div>
 
@@ -30,7 +30,7 @@ export const SchemaEditor = () => {
                 width={"100%"}
                 language="json"
                 value={JSON.stringify(ctx.schema, null, 2)}
-                options={{ ...defaultMonacoSettings, readOnly: true }}
+                options={{ ...defaultMonacoSettings, readOnly: true, automaticLayout: true }}
               />
             </div>
           </div>

@@ -10,7 +10,12 @@ export const expressionInspector = (expression: string, config?: { scope?: objec
   if (!("lex" in lexer)) throw new Error("Angular Expressions' Lexer does not have an 'ast' method, which is needed for this tool.")
 
   // @ts-expect-error - we check above
-  const tokens: any[] = lexer.lex(expression)
+  let tokens: any[] = []
+  try {
+    tokens = lexer.lex(expression)
+  } catch (e) {
+    console.error(e)
+  }
 
   const isIdentifier = (token: any): token is IdentifierToken => "index" in token && "text" in token && "identifier" in token
   const isDot = (token: any): token is DotToken => "index" in token && "text" in token && token.text === "."
@@ -27,6 +32,7 @@ export const expressionInspector = (expression: string, config?: { scope?: objec
     /** 0-based  */
     infoAtPosition: (position: number) => {
       let foundIdentifier: IdentifierToken | DotToken | undefined
+      if (!tokens.length) return undefined
 
       // Jump to last if we know the cursor is at the end
       if (position === expression.length) {
@@ -68,8 +74,8 @@ export const expressionInspector = (expression: string, config?: { scope?: objec
         if (isIdentifier(token)) lookupPath.push(token.text)
       }
 
-      const scopeObject = objectPath.reduce((acc, token) => {
-        if (isIdentifier(token) && acc[token.text]) return acc[token.text]
+      const scopeObject = lookupPath.reduce((acc, component) => {
+        if (acc[component]) return acc[component]
         return acc
       }, scope)
 
@@ -103,7 +109,7 @@ export const expressionInspector = (expression: string, config?: { scope?: objec
       // A monaco partial
       type Completion = { label: string; detail?: string }
 
-      const scopeCompletion = Object.keys(scopeObject)
+      const scopeCompletions = Object.keys(scopeObject)
       const schemaCompletion: Completion[] = []
       for (const key of Object.keys(schemaInfo?.properties || {})) {
         schemaCompletion.push({
@@ -111,16 +117,21 @@ export const expressionInspector = (expression: string, config?: { scope?: objec
           detail: schemaInfo.properties[key].description,
         })
       }
+      const schemaRecommendations = new Set(Object.keys(schemaInfo?.properties || {}))
 
-      const allCompletions: Completion[] = [...scopeCompletion.map((c) => ({ label: c })), ...schemaCompletion]
+      // Schema goes first so the de-duper doesn't get them
+      const allCompletions: Completion[] = [
+        ...schemaCompletion,
+        ...scopeCompletions.filter((s) => schemaRecommendations.has(s)).map((c) => ({ label: c })),
+      ]
+
       // De-dupe
       const completions = allCompletions.filter((c, i) => allCompletions.findIndex((cc) => cc.label === c.label) === i)
       const lastToken = objectPath[objectPath.length - 1]
 
       return {
         char: expression[position],
-        chain: objectPath,
-        path: objectPath.map((token) => token.text).join(""),
+        lookupPath,
         scopeObject,
         completions: onDot ? completions : completions.filter((c) => c.label.startsWith(lastToken.text)),
         schemaInfo,
